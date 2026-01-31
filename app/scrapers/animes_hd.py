@@ -3,58 +3,58 @@ from app.scrapers.base import BaseScraper
 from app.models import Anime, Episode, SearchResult
 from playwright.async_api import async_playwright
 import urllib.parse
+# from playwright_stealth import stealth_async
 import re
 
-class AnimesDigitalScraper(BaseScraper):
+class AnimesHDScraper(BaseScraper):
     def __init__(self):
-        super().__init__("https://animesdigital.org")
+        super().__init__("https://animeshd.to")
 
     async def _get_page(self, playwright):
         browser = await playwright.chromium.launch(headless=True)
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         )
-        return await context.new_page(), browser
+        page = await context.new_page()
+        # await stealth_async(page)
+        return page, browser
 
     async def search(self, query: str) -> List[SearchResult]:
         results = []
         async with async_playwright() as p:
             page, browser = await self._get_page(p)
             try:
-                # Search URL pattern
+                # Search URL: /?s=QUERY
                 encoded_query = urllib.parse.quote(query)
                 search_url = f"{self.base_url}/?s={encoded_query}" 
                 await page.goto(search_url, wait_until="domcontentloaded")
                 
                 # Check for results
-                # Common selectors for WordPress/anime themes
-                articles = page.locator('article, .item-poster, .result-item') 
+                # Common selectors: article.item, .result-item
+                articles = page.locator('article.item, div.result-item, .animation-2 article') 
                 count = await articles.count()
                 
-                print(f"AnimesDigital: Found {count} results for {query}")
+                print(f"AnimesHD: Found {count} results for {query}")
 
                 for i in range(count):
                     article = articles.nth(i)
-                    # Try to find title
-                    title_el = article.locator('h3 a, .title a, h2 a, a.poster-title')
+                    title_el = article.locator('h3 a, .title a, .poster a')
                     if await title_el.count() > 0:
                         first_title_el = title_el.first
                         title = await first_title_el.inner_text()
                         url = await first_title_el.get_attribute('href')
                         
-                        # Try to find image
                         img_el = article.locator('img')
                         cover = await img_el.first.get_attribute('src') if await img_el.count() > 0 else None
                         
-                        if url:
-                            results.append(SearchResult(
-                                title=title.strip(),
-                                url=url,
-                                cover_image=cover,
-                                source="AnimesDigital"
-                            ))
+                        results.append(SearchResult(
+                            title=title.strip(),
+                            url=url,
+                            cover_image=cover,
+                            source="AnimesHD"
+                        ))
             except Exception as e:
-                print(f"Error searching AnimesDigital {query}: {e}")
+                print(f"Error searching AnimesHD {query}: {e}")
             finally:
                 await browser.close()
         return results
@@ -66,30 +66,26 @@ class AnimesDigitalScraper(BaseScraper):
             try:
                 await page.goto(anime_url, wait_until="domcontentloaded")
                 
-                # Title
                 title = "Unknown"
-                h1 = page.locator('h1.entry-title, h1.title, .infos h1')
+                h1 = page.locator('h1.entry-title, .data h1')
                 if await h1.count() > 0:
                     title = await h1.first.inner_text()
                 
-                # Cover
                 cover = None
-                img = page.locator('.poster img, .thumb img')
+                img = page.locator('.poster img, .sheader .poster img')
                 if await img.count() > 0:
                     cover = await img.first.get_attribute('src')
 
                 episodes = []
                 # Episodes list
-                # Often in a list or grid
-                ep_links = page.locator('.episodios li a, .episodes-list a, .list-episodes a')
+                ep_links = page.locator('.episodios li a, .episodes-list li a')
                 count = await ep_links.count()
                 
                 for i in range(count):
                     link = ep_links.nth(i)
                     ep_url = await link.get_attribute('href')
-                    # Try to get episode number from text
                     text = await link.inner_text() 
-                    # Extract number if possible
+                    
                     ep_num = text
                     match = re.search(r'\d+', text)
                     if match:
@@ -108,15 +104,15 @@ class AnimesDigitalScraper(BaseScraper):
                     cover_image=cover,
                     episodes=episodes
                 )
-                
+
                 # Extra fields
                 # Description
-                desc_el = page.locator('.sinopse, .description, .content p')
+                desc_el = page.locator('.sinopse, .description, .content p, .entry-content p')
                 if await desc_el.count() > 0:
                      anime.description = await desc_el.first.inner_text()
                 
                 # Genres
-                genres_el = page.locator('.genres a, .sgeneros a')
+                genres_el = page.locator('.genres a, .sgeneros a, .generos a')
                 count_g = await genres_el.count()
                 for i in range(count_g):
                      anime.genres.append(await genres_el.nth(i).inner_text())
@@ -127,12 +123,12 @@ class AnimesDigitalScraper(BaseScraper):
                      anime.year = await year_el.first.inner_text()
 
                 # Status
-                status_el = page.locator('.status, .meta .status')
+                status_el = page.locator('.status, .meta .status, .estado')
                 if await status_el.count() > 0:
                      anime.status = await status_el.first.inner_text()
 
             except Exception as e:
-                print(f"Error getting details for {anime_url} on AnimesDigital: {e}")
+                print(f"Error getting details for {anime_url} on AnimesHD: {e}")
             finally:
                 await browser.close()
         return anime
@@ -143,18 +139,19 @@ class AnimesDigitalScraper(BaseScraper):
             page, browser = await self._get_page(p)
             try:
                 await page.goto(episode_url, wait_until="domcontentloaded")
-                # Look for video player iframe or video tag
-                iframe = page.locator('iframe.player, .video-content iframe, #player iframe')
+                # Look for player iframe
+                iframe = page.locator('iframe.player, .video-content iframe')
                 if await iframe.count() > 0:
-                    video_link = await iframe.first.get_attribute('src')
-                else:
-                    # Sometimes it's a video tag
-                    video = page.locator('video')
-                    if await video.count() > 0:
+                     video_link = await iframe.first.get_attribute('src')
+                
+                # Check for other common player containers if iframe not found
+                if not video_link:
+                     video = page.locator('video')
+                     if await video.count() > 0:
                          video_link = await video.first.get_attribute('src')
 
             except Exception as e:
-                 print(f"Error getting episode link {episode_url} on AnimesDigital: {e}")
+                 print(f"Error getting episode link {episode_url} on AnimesHD: {e}")
             finally:
                 await browser.close()
         return video_link

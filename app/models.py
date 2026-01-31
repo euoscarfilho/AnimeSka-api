@@ -5,11 +5,16 @@ class Episode(BaseModel):
     number: str
     url: str
     title: Optional[str] = None
+    image: Optional[str] = None
 
 class Anime(BaseModel):
     title: str
     url: str
     cover_image: Optional[str] = None
+    description: Optional[str] = None
+    genres: List[str] = []
+    year: Optional[str] = None
+    status: Optional[str] = None
     episodes: List[Episode] = []
 
 class SearchResult(BaseModel):
@@ -17,3 +22,4 @@ class SearchResult(BaseModel):
     url: str
     cover_image: Optional[str] = None
     source: str
+    year: Optional[str] = None # Useful for search too

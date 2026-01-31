@@ -100,6 +100,28 @@ class AnimesOnlineCCScraper(BaseScraper):
                     cover_image=cover,
                     episodes=episodes
                 )
+                
+                # Extra fields
+                # Description
+                desc_el = page.locator('.sinopse, .description, .content p')
+                if await desc_el.count() > 0:
+                     anime.description = await desc_el.first.inner_text()
+                
+                # Genres
+                genres_el = page.locator('.genres a, .sgeneros a')
+                count_g = await genres_el.count()
+                for i in range(count_g):
+                     anime.genres.append(await genres_el.nth(i).inner_text())
+
+                # Year
+                year_el = page.locator('.date, .year, .meta .date')
+                if await year_el.count() > 0:
+                     anime.year = await year_el.first.inner_text()
+
+                # Status
+                status_el = page.locator('.status, .meta .status')
+                if await status_el.count() > 0:
+                     anime.status = await status_el.first.inner_text()
 
             except Exception as e:
                 print(f"Error getting details for {anime_url} on AnimesOnlineCC: {e}")
