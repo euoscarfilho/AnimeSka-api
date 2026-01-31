@@ -1,0 +1,168 @@
+# Animeska API
+
+Uma API RESTful robusta e assíncrona para extrair informações e links de vídeo de animes de múltiplas fontes brasileiras populares (`AnimesHD`, `AnimesDigital`, `AnimesOnlineCC`).
+
+Construída com **FastAPI** e **Playwright**, esta API é capaz de navegar em sites modernos, contornar proteções básicas (com `playwright-stealth`) e extrair URLs diretas de vídeo (`.mp4`, `.m3u8`) através de interceptação de rede (network sniffing).
+
+## 🚀 Funcionalidades
+
+*   **Busca Unificada:** Pesquise animes em múltiplas fontes simultaneamente.
+*   **Detalhes Completos:** Título, Capa, Sinopse, Gêneros, Ano, Status, Temporada e lista de Episódios.
+*   **Links de Vídeo Diretos:**
+    *   Extração inteligente de links de vídeo (`.mp4`, `.m3u8`).
+    *   Suporte a interceptação de requisições de rede para players ofuscados.
+    *   Navegação automática em iframes de players (ex: Blogger, MP4Upload).
+*   **Stealth Mode:** Utiliza técnicas para evitar detecção por anti-bots.
+*   **Documentação Automática:** Swagger UI e ReDoc integrados.
+
+## 🛠️ Tecnologias
+
+*   [FastAPI](https://fastapi.tiangolo.com/) - Framework web moderno e rápido.
+*   [Playwright](https://playwright.dev/) - Automação de navegador para scraping avançado.
+*   [Playwright Stealth](https://pypi.org/project/playwright-stealth/) - Evasão de detecção de bots.
+*   [Uvicorn](https://www.uvicorn.org/) - Servidor ASGI.
+
+## 📦 Instalação
+
+### Pré-requisitos
+
+*   Python 3.8+
+*   Navegadores do Playwright
+
+### Passos
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone https://github.com/SEU_USUARIO/AnimeskaAPI.git
+    cd AnimeskaAPI
+    ```
+
+2.  **Crie um ambiente virtual (Recomendado):**
+    ```bash
+    python -m venv venv
+    # Windows
+    .\venv\Scripts\activate
+    # Linux/Mac
+    source venv/bin/activate
+    ```
+
+3.  **Instale as dependências:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Instale os navegadores do Playwright:**
+    ```bash
+    playwright install chromium
+    ```
+
+## ⚡ Como Rodar
+
+### Localmente
+
+Inicie o servidor de desenvolvimento:
+
+```bash
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+A API estará disponível em `http://localhost:8000`.
+
+*   **Docs Interativa (Swagger):** `http://localhost:8000/docs`
+*   **ReDoc:** `http://localhost:8000/redoc`
+
+### Docker
+
+1.  **Construa a imagem:**
+    ```bash
+    docker build -t animeska-api .
+    ```
+
+2.  **Rode o container:**
+    ```bash
+    docker run -p 8000:8000 animeska-api
+    ```
+
+## 📖 Endpoints da API
+
+### 1. Buscar Animes
+Busca por um termo em todas as fontes ou em uma específica.
+
+*   **GET** `/api/v1/search`
+*   **Parâmetros:**
+    *   `q` (string, obrigatório): Termo da busca (ex: "Naruto").
+    *   `source` (string, opcional): Fonte específica (`animes_hd`, `animes_digital`, `animes_online_cc`).
+
+**Exemplo de Resposta:**
+```json
+[
+  {
+    "title": "Naruto Shippuden",
+    "url": "https://animeshd.to/animes/naruto-shippuden-dublado/",
+    "cover_image": "https://img.png",
+    "source": "AnimesHD"
+  }
+]
+```
+
+### 2. Detalhes do Anime
+Obtém informações completas e lista de episódios.
+
+*   **GET** `/api/v1/anime/details`
+*   **Parâmetros:**
+    *   `url` (string, obrigatório): URL do anime (obtida na busca).
+    *   `source` (string, obrigatório): Fonte do anime.
+
+**Exemplo de Resposta:**
+```json
+{
+  "title": "Naruto Shippuden",
+  "description": "Naruto Uzumaki quer ser o melhor ninja...",
+  "genres": ["Ação", "Aventura"],
+  "year": "2007",
+  "episodes": [
+    {
+      "number": "1",
+      "title": "Episódio 1",
+      "url": "https://animeshd.to/episodio/1"
+    }
+  ]
+}
+```
+
+### 3. Link do Episódio (Vídeo)
+Extrai o link direto de reprodução.
+
+*   **GET** `/api/v1/episode/link`
+*   **Parâmetros:**
+    *   `url` (string, obrigatório): URL do episódio.
+    *   `source` (string, obrigatório): Fonte do anime.
+
+**Exemplo de Resposta:**
+```json
+"https://blogger.com/video-play.mp4?token=..."
+```
+
+## ☁️ Deploy
+
+### Render (Recomendado)
+
+1.  Crie um novo **Web Service** no Render.
+2.  Conecte seu repositório GitHub/GitLab.
+3.  **Runtime:** Python 3.
+4.  **Build Command:** `pip install -r requirements.txt && playwright install chromium`
+5.  **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+> **Nota sobre Deploy Serverless (Vercel):** Devido ao uso intensivo do Playwright (Headless Browser), esta API **não é recomendada** para ambientes Serverless com limites estritos de tamanho (como a camada gratuita da Vercel), pois o binário do navegador excede os limites. Use serviços baseados em container como Render, Railway ou Fly.io.
+
+## 📝 Fontes Suportadas
+
+| Fonte | Status | Observações |
+| :--- | :--- | :--- |
+| **AnimesHD** | ✅ Online | Busca, Detalhes Ricos, Extração via Network Sniffing |
+| **AnimesDigital** | ✅ Online | Redirecionamento automático na busca suportado |
+| **AnimesOnlineCC** | ✅ Online | Detalhes Ricos, Extração de Episódios |
+
+## ⚠️ Aviso Legal
+
+Esta API é apenas para fins educacionais e de aprendizado. O desenvolvedor não incentiva a pirataria nem se responsabiliza pelo uso indevido. Todo o conteúdo é propriedade de seus respectivos donos.

@@ -29,33 +29,47 @@ class AnimesDigitalScraper(BaseScraper):
                 search_url = f"{self.base_url}/?s={encoded_query}" 
                 await page.goto(search_url, wait_until="domcontentloaded")
                 
-                # Check for results
-                # Common selectors for WordPress/anime themes
-                articles = page.locator('article, .item-poster, .result-item') 
-                count = await articles.count()
-                
-                print(f"AnimesDigital: Found {count} results for {query}")
-
-                for i in range(count):
-                    article = articles.nth(i)
-                    # Try to find title
-                    title_el = article.locator('h3 a, .title a, h2 a, a.poster-title')
-                    if await title_el.count() > 0:
-                        first_title_el = title_el.first
-                        title = await first_title_el.inner_text()
-                        url = await first_title_el.get_attribute('href')
-                        
-                        # Try to find image
-                        img_el = article.locator('img')
-                        cover = await img_el.first.get_attribute('src') if await img_el.count() > 0 else None
-                        
-                        if url:
-                            results.append(SearchResult(
-                                title=title.strip(),
-                                url=url,
-                                cover_image=cover,
-                                source="AnimesDigital"
-                            ))
+                # Check if redirected to a specific anime page
+                current_url = page.url
+                if "/anime/" in current_url:
+                     # Parse as single result
+                     print(f"AnimesDigital: Redirected to {current_url}")
+                     # Extract details for result
+                     title_el = page.locator('div.data h1')
+                     title = await title_el.first.inner_text() if await title_el.count() > 0 else "Unknown"
+                     img_el = page.locator('div.poster img')
+                     cover = await img_el.first.get_attribute('src') if await img_el.count() > 0 else None
+                     
+                     results.append(SearchResult(
+                        title=title.strip(),
+                        url=current_url,
+                        cover_image=cover,
+                        source="AnimesDigital"
+                     ))
+                else:
+                    # Check for results list
+                    articles = page.locator('div.result-item, article, .items article') 
+                    count = await articles.count()
+                    
+                    print(f"AnimesDigital: Found {count} results for {query}")
+    
+                    for i in range(count):
+                        article = articles.nth(i)
+                        title_el = article.locator('.title a, h3 a, .poster a')
+                        if await title_el.count() > 0:
+                            title = await title_el.first.inner_text()
+                            url = await title_el.first.get_attribute('href')
+                            
+                            img_el = article.locator('img')
+                            cover = await img_el.first.get_attribute('src') if await img_el.count() > 0 else None
+                            
+                            if url:
+                                results.append(SearchResult(
+                                    title=title.strip(),
+                                    url=url,
+                                    cover_image=cover,
+                                    source="AnimesDigital"
+                                ))
             except Exception as e:
                 print(f"Error searching AnimesDigital {query}: {e}")
             finally:

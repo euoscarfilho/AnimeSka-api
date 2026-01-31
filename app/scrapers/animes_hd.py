@@ -61,8 +61,10 @@ class AnimesHDScraper(BaseScraper):
     async def get_details(self, anime_url: str) -> Anime:
         anime = None
         async with async_playwright() as p:
-            page, browser = await self._get_page(p)
+            browser = None
             try:
+                page, browser = await self._get_page(p)
+                
                 await page.goto(anime_url, wait_until="domcontentloaded")
                 
                 title = "Unknown"
@@ -74,72 +76,83 @@ class AnimesHDScraper(BaseScraper):
                 img = page.locator('.poster img, .sheader .poster img')
                 if await img.count() > 0:
                     cover = await img.first.get_attribute('src')
-
-                episodes = []
-                # Episodes list
-                ep_links = page.locator('.episodios li a, .episodes-list li a')
-                count = await ep_links.count()
-                
-                for i in range(count):
-                    link = ep_links.nth(i)
-                    ep_url = await link.get_attribute('href')
-                    text = await link.inner_text() 
                     
-                    ep_num = text
-                    match = re.search(r'\d+', text)
-                    if match:
-                        ep_num = match.group(0)
-
-                    if ep_url:
-                        episodes.append(Episode(
-                            number=ep_num.strip(), 
-                            url=ep_url, 
-                            title=text.strip()
-                        ))
-
+                # Initialize Anime object immediately
                 anime = Anime(
                     title=title.strip(),
                     url=anime_url,
                     cover_image=cover,
-                    episodes=episodes
+                    episodes=[],
+                    source="AnimesHD"
                 )
 
+                # Episodes list
+                try:
+                    ep_links = page.locator('.episodios li a, .episodes-list li a')
+                    count = await ep_links.count()
+                    
+                    for i in range(count):
+                        try:
+                            link = ep_links.nth(i)
+                            ep_url = await link.get_attribute('href')
+                            text = await link.inner_text() 
+                            
+                            ep_num = text
+                            match = re.search(r'\d+', text)
+                            if match:
+                                ep_num = match.group(0)
+        
+                            if ep_url:
+                                anime.episodes.append(Episode(
+                                    number=ep_num.strip(), 
+                                    url=ep_url, 
+                                    title=text.strip()
+                                ))
+                        except Exception as e_inner:
+                            print(f"Error parsing episode {i} on AnimesHD: {e_inner}")
+                except Exception as e_eps:
+                    print(f"Error extracting episodes list on AnimesHD: {e_eps}")
+
                 # Extra fields
-                # Description
-                desc_el = page.locator('.sinopse, .description, .content p, .entry-content p')
-                if await desc_el.count() > 0:
-                     anime.description = await desc_el.first.inner_text()
-                
-                # Genres
-                genres_el = page.locator('.genres a, .sgeneros a, .generos a')
-                count_g = await genres_el.count()
-                for i in range(count_g):
-                     anime.genres.append(await genres_el.nth(i).inner_text())
+                try:
+                    # Description
+                    desc_el = page.locator('.sinopse, .description, .content p, .entry-content p')
+                    if await desc_el.count() > 0:
+                         anime.description = await desc_el.first.inner_text()
+                    
+                    # Genres
+                    genres_el = page.locator('.genres a, .sgeneros a, .generos a')
+                    count_g = await genres_el.count()
+                    for i in range(count_g):
+                         anime.genres.append(await genres_el.nth(i).inner_text())
 
-                # Year
-                year_el = page.locator('.date, .year, .meta .date')
-                if await year_el.count() > 0:
-                     anime.year = await year_el.first.inner_text()
+                    # Year
+                    year_el = page.locator('.date, .year, .meta .date')
+                    if await year_el.count() > 0:
+                         anime.year = await year_el.first.inner_text()
 
-                # Status
-                status_el = page.locator('.status, .meta .status, .estado')
-                if await status_el.count() > 0:
-                     anime.status = await status_el.first.inner_text()
+                    # Status
+                    status_el = page.locator('.status, .meta .status, .estado')
+                    if await status_el.count() > 0:
+                         anime.status = await status_el.first.inner_text()
 
-                # Season (Try to extract from title)
-                anime.season = "Unknown"
-                season_match = re.search(r'(\d+)ª Temporada|Season (\d+)|(\d+) Temporada', title, re.IGNORECASE)
-                if season_match:
-                    anime.season = season_match.group(1) or season_match.group(2) or season_match.group(3)
-                else: 
-                     anime.season = "1" # Default to 1 if not specified? Or keep None. Let's say "1" or "Unknown"
-
-                anime.source = "AnimesHD"
+                    # Season
+                    anime.season = "Unknown"
+                    season_match = re.search(r'(\d+)ª Temporada|Season (\d+)|(\d+) Temporada', title, re.IGNORECASE)
+                    if season_match:
+                        anime.season = season_match.group(1) or season_match.group(2) or season_match.group(3)
+                    else: 
+                         anime.season = "1"
+                except Exception as e:
+                    print(f"Error extracting extra fields for {anime_url} on AnimesHD: {e}")
 
             except Exception as e:
-                print(f"Error getting details for {anime_url} on AnimesHD: {e}")
+                print(f"Critical error getting details for {anime_url} on AnimesHD: {e}")
+                import traceback
+                traceback.print_exc()
             finally:
-                await browser.close()
+                if browser:
+                    await browser.close()
         return anime
 
     async def get_episode_link(self, episode_url: str) -> str:

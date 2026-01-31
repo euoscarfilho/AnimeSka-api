@@ -76,9 +76,12 @@ class AnimesOnlineCCScraper(BaseScraper):
 
                 episodes = []
                 # Episodes list often in a separate section or loaded dynamically
-                # Try common selectors
-                ep_links = page.locator('div.episodios li a, ul.episodes li a')
+                # Episodes list
+                # Found in dump: ul.episodios li .episodiotitle a
+                ep_links = page.locator('ul.episodios li a, .episodiotitle a, .episodes-list li a')
                 count = await ep_links.count()
+                
+                print(f"AnimesOnlineCC: Found {count} episodes")
                 
                 for i in range(count):
                     link = ep_links.nth(i)
