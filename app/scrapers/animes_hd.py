@@ -220,6 +220,8 @@ class AnimesHDScraper(BaseScraper):
             except Exception as e:
                  print(f"Error getting episode link {episode_url} on AnimesHD: {e}")
             finally:
-                await browser.close()
+                if browser:
+                    await browser.close()
+        return video_link
     def get_anime_url(self, slug: str) -> str:
         return f"{self.base_url}/animes/{slug}/"
