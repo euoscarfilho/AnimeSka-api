@@ -15,6 +15,8 @@ class Anime(BaseModel):
     genres: List[str] = []
     year: Optional[str] = None
     status: Optional[str] = None
+    season: Optional[str] = None
+    source: Optional[str] = None
     episodes: List[Episode] = []
 
 class SearchResult(BaseModel):

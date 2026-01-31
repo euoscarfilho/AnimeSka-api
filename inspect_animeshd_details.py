@@ -48,6 +48,11 @@ def inspect_details():
         status = soup.select_one('.status, .meta .status, .estado, .info-content .status')
         if status:
             print(f"Status found: {status.text.strip()}")
+
+        # Season
+        season = soup.select_one('.season, .meta .season, .temporada')
+        if season:
+             print(f"Season found: {season.text.strip()}")
             
         # Image
         img = soup.select_one('.poster img, .sheader .poster img')

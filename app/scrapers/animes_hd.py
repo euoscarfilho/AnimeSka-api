@@ -3,8 +3,7 @@ from app.scrapers.base import BaseScraper
 from app.models import Anime, Episode, SearchResult
 from playwright.async_api import async_playwright
 import urllib.parse
-# from playwright_stealth import stealth_async
-import re
+from playwright_stealth import Stealth
 
 class AnimesHDScraper(BaseScraper):
     def __init__(self):
@@ -16,7 +15,7 @@ class AnimesHDScraper(BaseScraper):
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         )
         page = await context.new_page()
-        # await stealth_async(page)
+        await Stealth().apply_stealth_async(page)
         return page, browser
 
     async def search(self, query: str) -> List[SearchResult]:
@@ -127,6 +126,16 @@ class AnimesHDScraper(BaseScraper):
                 if await status_el.count() > 0:
                      anime.status = await status_el.first.inner_text()
 
+                # Season (Try to extract from title)
+                anime.season = "Unknown"
+                season_match = re.search(r'(\d+)ª Temporada|Season (\d+)|(\d+) Temporada', title, re.IGNORECASE)
+                if season_match:
+                    anime.season = season_match.group(1) or season_match.group(2) or season_match.group(3)
+                else: 
+                     anime.season = "1" # Default to 1 if not specified? Or keep None. Let's say "1" or "Unknown"
+
+                anime.source = "AnimesHD"
+
             except Exception as e:
                 print(f"Error getting details for {anime_url} on AnimesHD: {e}")
             finally:
@@ -138,17 +147,48 @@ class AnimesHDScraper(BaseScraper):
         async with async_playwright() as p:
             page, browser = await self._get_page(p)
             try:
+                # Setup network sniffing
+                found_videos = []
+                async def handle_request(route):
+                    req = route.request
+                    url = req.url
+                    if ".mp4" in url or ".m3u8" in url or "videoplayback" in url:
+                        found_videos.append(url)
+                    await route.continue_()
+
+                await page.route("**/*", handle_request)
+
                 await page.goto(episode_url, wait_until="domcontentloaded")
-                # Look for player iframe
-                iframe = page.locator('iframe.player, .video-content iframe')
-                if await iframe.count() > 0:
-                     video_link = await iframe.first.get_attribute('src')
                 
-                # Check for other common player containers if iframe not found
-                if not video_link:
-                     video = page.locator('video')
-                     if await video.count() > 0:
-                         video_link = await video.first.get_attribute('src')
+                # Wait a bit for requests
+                try:
+                    await page.wait_for_timeout(3000)
+                except:
+                    pass
+
+                if found_videos:
+                     video_link = found_videos[0]
+                else:
+                    # Fallback: Check iframe and navigate to it
+                    iframe = page.locator('iframe.player, .video-content iframe, .embed-responsive iframe, iframe.metaframe')
+                    if await iframe.count() > 0:
+                        src = await iframe.first.get_attribute('src')
+                        if src:
+                            print(f"Navigating to iframe src: {src}")
+                            # Reset found videos or keep appending?
+                            # Navigate to iframe src to capture network there
+                            await page.goto(src, wait_until="domcontentloaded")
+                            await page.wait_for_timeout(5000)
+                            if found_videos:
+                                 video_link = found_videos[0]
+                            else:
+                                 # Fallback to src if no video found
+                                 video_link = src
+                    else:
+                         # Try video tag
+                         video = page.locator('video')
+                         if await video.count() > 0:
+                             video_link = await video.first.get_attribute('src')
 
             except Exception as e:
                  print(f"Error getting episode link {episode_url} on AnimesHD: {e}")

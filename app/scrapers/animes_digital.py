@@ -4,6 +4,7 @@ from app.models import Anime, Episode, SearchResult
 from playwright.async_api import async_playwright
 import urllib.parse
 import re
+from playwright_stealth import Stealth
 
 class AnimesDigitalScraper(BaseScraper):
     def __init__(self):
@@ -14,7 +15,9 @@ class AnimesDigitalScraper(BaseScraper):
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         )
-        return await context.new_page(), browser
+        page = await context.new_page()
+        await Stealth().apply_stealth_async(page)
+        return page, browser
 
     async def search(self, query: str) -> List[SearchResult]:
         results = []
@@ -131,6 +134,16 @@ class AnimesDigitalScraper(BaseScraper):
                 if await status_el.count() > 0:
                      anime.status = await status_el.first.inner_text()
 
+                # Season
+                anime.season = "Unknown"
+                season_match = re.search(r'(\d+)ª Temporada|Season (\d+)|(\d+) Temporada', title, re.IGNORECASE)
+                if season_match:
+                    anime.season = season_match.group(1) or season_match.group(2) or season_match.group(3)
+                else:
+                    anime.season = "1"
+                
+                anime.source = "AnimesDigital"
+
             except Exception as e:
                 print(f"Error getting details for {anime_url} on AnimesDigital: {e}")
             finally:
@@ -142,16 +155,39 @@ class AnimesDigitalScraper(BaseScraper):
         async with async_playwright() as p:
             page, browser = await self._get_page(p)
             try:
+                # Setup network sniffing
+                found_videos = []
+                async def handle_request(route):
+                    req = route.request
+                    url = req.url
+                    if ".mp4" in url or ".m3u8" in url or "videoplayback" in url:
+                        found_videos.append(url)
+                    await route.continue_()
+
+                await page.route("**/*", handle_request)
+
                 await page.goto(episode_url, wait_until="domcontentloaded")
-                # Look for video player iframe or video tag
-                iframe = page.locator('iframe.player, .video-content iframe, #player iframe')
-                if await iframe.count() > 0:
-                    video_link = await iframe.first.get_attribute('src')
+                await page.wait_for_timeout(3000)
+
+                if found_videos:
+                     video_link = found_videos[0]
                 else:
-                    # Sometimes it's a video tag
-                    video = page.locator('video')
-                    if await video.count() > 0:
-                         video_link = await video.first.get_attribute('src')
+                    # Fallback: iframe
+                    iframe = page.locator('iframe.player, .video-content iframe, #player iframe')
+                    if await iframe.count() > 0:
+                        src = await iframe.first.get_attribute('src')
+                        if src:
+                            print(f"Navigating to iframe src: {src}")
+                            await page.goto(src, wait_until="domcontentloaded")
+                            await page.wait_for_timeout(5000)
+                            if found_videos:
+                                 video_link = found_videos[0]
+                            else:
+                                 video_link = src
+                    else:
+                         video = page.locator('video')
+                         if await video.count() > 0:
+                             video_link = await video.first.get_attribute('src')
 
             except Exception as e:
                  print(f"Error getting episode link {episode_url} on AnimesDigital: {e}")
