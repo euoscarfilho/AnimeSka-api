@@ -56,11 +56,20 @@ Construída com **FastAPI** e **Playwright**, esta API é capaz de navegar em si
     playwright install chromium
     ```
 
-## ⚡ Como Rodar
+### Usando Makefile (Mais Simples)
 
-### Localmente
+Se você tiver `make` instalado, pode usar comandos simplificados:
 
-Inicie o servidor de desenvolvimento:
+```bash
+make install # Instala dependências e browsers
+make dev     # Roda em modo desenvolvimento (reload ativado)
+make run     # Roda em modo normal
+make build   # Constrói a imagem Docker
+```
+
+### Manualmente
+
+Inicie o servidor:
 
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -73,15 +82,18 @@ A API estará disponível em `http://localhost:8000`.
 
 ### Docker
 
-1.  **Construa a imagem:**
-    ```bash
-    docker build -t animeska-api .
-    ```
+```bash
+docker build -t animeska-api .
+docker run -p 8000:8000 animeska-api
+```
 
-2.  **Rode o container:**
-    ```bash
-    docker run -p 8000:8000 animeska-api
-    ```
+## 📁 Estrutura do Projeto
+
+*   `app/`: Código fonte principal (FastAPI).
+*   `scripts/`: Scripts utilitários de teste e inspeção.
+*   `deploy/`: Arquivos de configuração para deploy (Vercel, etc).
+*   `Makefile`: Comandos de atalho para desenvolvimento.
+*   `pyproject.toml`: Metadados modernos do projeto Python.
 
 ## 🌐 Demo Online
 
@@ -145,9 +157,6 @@ curl "https://animeska-api.onrender.com/api/v1/anime/details?source=AnimesHD&url
 curl "https://animeska-api.onrender.com/api/v1/episode/link?source=AnimesHD&url=https%3A%2F%2Fanimeshd.to%2Fepisodio%2F..."
 ```
 
-## 📦 Instalação Local
-
-## ☁️ Deploy
 
 ### Render (Recomendado)
 
