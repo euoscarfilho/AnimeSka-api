@@ -96,6 +96,12 @@ class AnimesHDScraper(BaseScraper):
 
                 # Episodes list
                 try:
+                    # Wait for episodes to load
+                    try:
+                        await page.wait_for_selector('.episodios li a, .episodes-list li a', timeout=5000)
+                    except:
+                        print("Timeout waiting for episodes selector, trying to proceed anyway...")
+
                     ep_links = page.locator('.episodios li a, .episodes-list li a')
                     count = await ep_links.count()
                     

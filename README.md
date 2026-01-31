@@ -99,12 +99,43 @@ A API está rodando em produção no Render:
 curl "https://animeska-api.onrender.com/api/v1/search?q=Naruto"
 ```
 
+**Exemplo de Resposta:**
+```json
+[
+  {
+    "slug": "naruto-shippuden-dublado",
+    "title": "Naruto Shippuden",
+    "url": "https://animeshd.to/animes/naruto-shippuden-dublado/",
+    "cover_image": "https://img.png",
+    "source": "AnimesHD"
+  }
+]
+```
+
 ### 2. Detalhes do Anime
 **GET** `/api/v1/anime/details`
 
 ```bash
 # Exemplo com URL codificada (recomendado)
 curl "https://animeska-api.onrender.com/api/v1/anime/details?source=AnimesHD&url=https%3A%2F%2Fanimeshd.to%2Fanimes%2Fnaruto-shippuden-dublado%2F"
+```
+
+**Exemplo de Resposta:**
+```json
+{
+  "slug": "naruto-shippuden-dublado",
+  "title": "Naruto Shippuden",
+  "description": "Naruto Uzumaki quer ser o melhor ninja...",
+  "genres": ["Ação", "Aventura"],
+  "year": "2007",
+  "episodes": [
+    {
+      "number": "1",
+      "title": "Episódio 1",
+      "url": "https://animeshd.to/episodio/1"
+    }
+  ]
+}
 ```
 
 ### 3. Link do Episódio
@@ -133,8 +164,8 @@ curl "https://animeska-api.onrender.com/api/v1/episode/link?source=AnimesHD&url=
 | Fonte | Status | Observações |
 | :--- | :--- | :--- |
 | **AnimesHD** | ✅ Online | Busca, Detalhes Ricos, Extração via Network Sniffing |
-| **AnimesDigital** | ✅ Online | Redirecionamento automático na busca suportado |
-| **AnimesOnlineCC** | ✅ Online | Detalhes Ricos, Extração de Episódios |
+| **AnimesDigital** | ✅ Online | Busca, Detalhes Ricos, Extração via Network Sniffing |
+| **AnimesOnlineCC** | ✅ Online | Busca, Detalhes Ricos, Extração via Network Sniffing |
 
 ## ⚠️ Aviso Legal
 
