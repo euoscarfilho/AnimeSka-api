@@ -20,3 +20,8 @@ class BaseScraper(ABC):
     async def get_episode_link(self, episode_url: str) -> str:
         """Get the direct video link or embed for an episode."""
         pass
+
+    @abstractmethod
+    def get_anime_url(self, slug: str) -> str:
+        """Reconstruct the anime URL from a slug."""
+        pass

@@ -56,3 +56,40 @@ async def get_episode_link(url: str, source: str):
         return await animes_online_cc.get_episode_link(url)
     else:
         raise HTTPException(status_code=400, detail="Invalid source")
+@router.get("/anime/play", response_model=Optional[str])
+async def quick_play(slug: str, source: str, number: str):
+    """
+    Simplified endpoint: Directly get video link from slug, source and episode number.
+    Bypasses the need for client-side multi-step logic.
+    """
+    scraper = None
+    if source == "AnimesHD":
+        scraper = animes_hd
+    elif source == "AnimesDigital":
+        scraper = animes_digital
+    elif source == "AnimesOnlineCC":
+        scraper = animes_online_cc
+    
+    if not scraper:
+        raise HTTPException(status_code=400, detail="Invalid source")
+
+    # 1. Reconstruct anime URL
+    anime_url = scraper.get_anime_url(slug)
+    
+    # 2. Get details to find the episode URL for the given number
+    anime_details = await scraper.get_details(anime_url)
+    if not anime_details or not anime_details.episodes:
+        raise HTTPException(status_code=404, detail="Anime or episodes not found")
+    
+    # 3. Find specific episode
+    episode = next((ep for ep in anime_details.episodes if ep.number == number), None)
+    if not episode:
+        # Try fuzzy match if exact fails (e.g. "01" vs "1")
+        episode = next((ep for ep in anime_details.episodes if ep.number.lstrip('0') == number.lstrip('0')), None)
+    
+    if not episode:
+        raise HTTPException(status_code=404, detail=f"Episode {number} not found")
+    
+    # 4. Get video link
+    video_link = await scraper.get_episode_link(episode.url)
+    return video_link

@@ -107,8 +107,12 @@ A API está rodando em produção no Render:
 ### 1. Buscar Animes
 **GET** `/api/v1/search`
 
+**Parâmetros:**
+*   `q`: Termo de busca (ex: `Naruto`).
+*   `source`: (Opcional) Filtrar por fonte. Valores: `animes_hd`, `animes_digital`, `animes_online_cc`.
+
 ```bash
-curl "https://animeska-api.onrender.com/api/v1/search?q=Naruto"
+curl "https://animeska-api.onrender.com/api/v1/search?q=Naruto&source=animes_hd"
 ```
 
 **Exemplo de Resposta:**
@@ -140,6 +144,9 @@ curl "https://animeska-api.onrender.com/api/v1/anime/details?source=AnimesHD&url
   "description": "Naruto Uzumaki quer ser o melhor ninja...",
   "genres": ["Ação", "Aventura"],
   "year": "2007",
+  "status": "Completo",
+  "season": "1",
+  "source": "AnimesHD",
   "episodes": [
     {
       "number": "1",
@@ -157,6 +164,20 @@ curl "https://animeska-api.onrender.com/api/v1/anime/details?source=AnimesHD&url
 curl "https://animeska-api.onrender.com/api/v1/episode/link?source=AnimesHD&url=https%3A%2F%2Fanimeshd.to%2Fepisodio%2F..."
 ```
 
+### 4. Play Rápido (Simplificado) ✅
+**GET** `/api/v1/anime/play`
+
+Este endpoint combina a busca de detalhes e extração do link em uma única chamada. Ideal para quando você já tem o `slug` do anime.
+
+```bash
+curl "https://animeska-api.onrender.com/api/v1/anime/play?source=AnimesHD&slug=sousou-no-frieren&number=1"
+```
+
+**Parâmetros:**
+*   `slug`: O identificador do anime (ex: `sousou-no-frieren`).
+*   `source`: A fonte (ex: `AnimesHD`).
+*   `number`: O número do episódio (ex: `1`).
+
 
 ### Render (Recomendado)
 
@@ -166,7 +187,11 @@ curl "https://animeska-api.onrender.com/api/v1/episode/link?source=AnimesHD&url=
 4.  **Build Command:** `pip install -r requirements.txt && playwright install chromium`
 5.  **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
-> **Nota sobre Deploy Serverless (Vercel):** Devido ao uso intensivo do Playwright (Headless Browser), esta API **não é recomendada** para ambientes Serverless com limites estritos de tamanho (como a camada gratuita da Vercel), pois o binário do navegador excede os limites. Use serviços baseados em container como Render, Railway ou Fly.io.
+### Vercel (Experimental)
+
+Arquivos de configuração para Vercel estão disponíveis em `deploy/vercel`.
+
+> **Nota:** Deploy em Serverless (como Vercel) pode encontrar limitações devido ao tamanho dos binários do navegador Playwright. Recomendamos o uso de containers (Docker/Render/Railway) para maior estabilidade, mas oferecemos suporte experimental para Vercel via `@vercel/python`.
 
 ## 📝 Fontes Suportadas
 
