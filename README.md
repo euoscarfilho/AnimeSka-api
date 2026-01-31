@@ -83,65 +83,38 @@ A API estará disponível em `http://localhost:8000`.
     docker run -p 8000:8000 animeska-api
     ```
 
-## 📖 Endpoints da API
+## 🌐 Demo Online
+
+A API está rodando em produção no Render:
+**Base URL:** `https://animeska-api.onrender.com`
+
+> **Nota:** O primeiro request pode demorar até 50 segundos pois o Render "adormece" o serviço gratuito por inatividade.
+
+## 📖 Endpoints e Exemplos de Uso
 
 ### 1. Buscar Animes
-Busca por um termo em todas as fontes ou em uma específica.
+**GET** `/api/v1/search`
 
-*   **GET** `/api/v1/search`
-*   **Parâmetros:**
-    *   `q` (string, obrigatório): Termo da busca (ex: "Naruto").
-    *   `source` (string, opcional): Fonte específica (`animes_hd`, `animes_digital`, `animes_online_cc`).
-
-**Exemplo de Resposta:**
-```json
-[
-  {
-    "title": "Naruto Shippuden",
-    "url": "https://animeshd.to/animes/naruto-shippuden-dublado/",
-    "cover_image": "https://img.png",
-    "source": "AnimesHD"
-  }
-]
+```bash
+curl "https://animeska-api.onrender.com/api/v1/search?q=Naruto"
 ```
 
 ### 2. Detalhes do Anime
-Obtém informações completas e lista de episódios.
+**GET** `/api/v1/anime/details`
 
-*   **GET** `/api/v1/anime/details`
-*   **Parâmetros:**
-    *   `url` (string, obrigatório): URL do anime (obtida na busca).
-    *   `source` (string, obrigatório): Fonte do anime.
-
-**Exemplo de Resposta:**
-```json
-{
-  "title": "Naruto Shippuden",
-  "description": "Naruto Uzumaki quer ser o melhor ninja...",
-  "genres": ["Ação", "Aventura"],
-  "year": "2007",
-  "episodes": [
-    {
-      "number": "1",
-      "title": "Episódio 1",
-      "url": "https://animeshd.to/episodio/1"
-    }
-  ]
-}
+```bash
+# Exemplo com URL codificada (recomendado)
+curl "https://animeska-api.onrender.com/api/v1/anime/details?source=AnimesHD&url=https%3A%2F%2Fanimeshd.to%2Fanimes%2Fnaruto-shippuden-dublado%2F"
 ```
 
-### 3. Link do Episódio (Vídeo)
-Extrai o link direto de reprodução.
+### 3. Link do Episódio
+**GET** `/api/v1/episode/link`
 
-*   **GET** `/api/v1/episode/link`
-*   **Parâmetros:**
-    *   `url` (string, obrigatório): URL do episódio.
-    *   `source` (string, obrigatório): Fonte do anime.
-
-**Exemplo de Resposta:**
-```json
-"https://blogger.com/video-play.mp4?token=..."
+```bash
+curl "https://animeska-api.onrender.com/api/v1/episode/link?source=AnimesHD&url=https%3A%2F%2Fanimeshd.to%2Fepisodio%2F..."
 ```
+
+## 📦 Instalação Local
 
 ## ☁️ Deploy
 

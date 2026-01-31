@@ -46,6 +46,7 @@ class AnimesOnlineCCScraper(BaseScraper):
                         
                         if url:
                             results.append(SearchResult(
+                                slug=url.rstrip('/').split('/')[-1],
                                 title=title.strip(),
                                 url=url,
                                 cover_image=cover,
@@ -101,6 +102,7 @@ class AnimesOnlineCCScraper(BaseScraper):
                         ))
 
                 anime = Anime(
+                    slug=anime_url.rstrip('/').split('/')[-1],
                     title=title.strip(),
                     url=anime_url,
                     cover_image=cover,

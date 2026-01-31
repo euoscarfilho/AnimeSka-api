@@ -3,6 +3,7 @@ from app.scrapers.base import BaseScraper
 from app.models import Anime, Episode, SearchResult
 from playwright.async_api import async_playwright
 import urllib.parse
+import re
 from playwright_stealth import Stealth
 
 class AnimesHDScraper(BaseScraper):
@@ -46,7 +47,10 @@ class AnimesHDScraper(BaseScraper):
                         img_el = article.locator('img')
                         cover = await img_el.first.get_attribute('src') if await img_el.count() > 0 else None
                         
+                        slug = url.rstrip('/').split('/')[-1] if url else None
+
                         results.append(SearchResult(
+                            slug=slug,
                             title=title.strip(),
                             url=url,
                             cover_image=cover,
@@ -78,7 +82,11 @@ class AnimesHDScraper(BaseScraper):
                     cover = await img.first.get_attribute('src')
                     
                 # Initialize Anime object immediately
+                # Extract slug
+                slug = anime_url.rstrip('/').split('/')[-1]
+
                 anime = Anime(
+                    slug=slug,
                     title=title.strip(),
                     url=anime_url,
                     cover_image=cover,

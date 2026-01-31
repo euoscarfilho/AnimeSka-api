@@ -41,6 +41,7 @@ class AnimesDigitalScraper(BaseScraper):
                      cover = await img_el.first.get_attribute('src') if await img_el.count() > 0 else None
                      
                      results.append(SearchResult(
+                        slug=current_url.rstrip('/').split('/')[-1],
                         title=title.strip(),
                         url=current_url,
                         cover_image=cover,
@@ -65,6 +66,7 @@ class AnimesDigitalScraper(BaseScraper):
                             
                             if url:
                                 results.append(SearchResult(
+                                    slug=url.rstrip('/').split('/')[-1],
                                     title=title.strip(),
                                     url=url,
                                     cover_image=cover,
@@ -120,6 +122,7 @@ class AnimesDigitalScraper(BaseScraper):
                         ))
 
                 anime = Anime(
+                    slug=anime_url.rstrip('/').split('/')[-1],
                     title=title.strip(),
                     url=anime_url,
                     cover_image=cover,

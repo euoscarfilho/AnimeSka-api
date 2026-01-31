@@ -8,6 +8,7 @@ class Episode(BaseModel):
     image: Optional[str] = None
 
 class Anime(BaseModel):
+    slug: Optional[str] = None
     title: str
     url: str
     cover_image: Optional[str] = None
@@ -20,8 +21,9 @@ class Anime(BaseModel):
     episodes: List[Episode] = []
 
 class SearchResult(BaseModel):
+    slug: Optional[str] = None
     title: str
     url: str
     cover_image: Optional[str] = None
     source: str
-    year: Optional[str] = None # Useful for search too
+    year: Optional[str] = None
