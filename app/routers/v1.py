@@ -82,14 +82,20 @@ async def search_anime(q: str, source: Optional[str] = Query(None, description="
 
 @router.get("/episode/link", response_model=str)
 async def get_episode_link(url: str, source: str):
+    link = ""
     if source == "AnimesHD":
-        return await animes_hd.get_episode_link(url)
+        link = await animes_hd.get_episode_link(url)
     elif source == "AnimesDigital":
-        return await animes_digital.get_episode_link(url)
+        link = await animes_digital.get_episode_link(url)
     elif source == "AnimesOnlineCC":
-        return await animes_online_cc.get_episode_link(url)
+        link = await animes_online_cc.get_episode_link(url)
     else:
         raise HTTPException(status_code=400, detail="Invalid source")
+    
+    if not link:
+        raise HTTPException(status_code=404, detail="Episode link not found or extraction failed")
+        
+    return link
 @router.get("/anime/play", response_model=Optional[str])
 async def quick_play(slug: str, number: str, source: Optional[str] = None):
     """
