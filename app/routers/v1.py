@@ -12,29 +12,7 @@ animes_hd = AnimesHDScraper()
 animes_digital = AnimesDigitalScraper()
 animes_online_cc = AnimesOnlineCCScraper()
 
-@router.get("/search", response_model=List[SearchResult])
-async def search_anime(q: str, source: Optional[str] = Query(None, description="Source to search from (animes_hd, animes_digital, animes_online_cc)")):
-    results = []
-    
-    if source == "animes_hd" or not source:
-        try:
-            results.extend(await animes_hd.search(q))
-        except Exception as e:
-            print(f"Error searching AnimesHD: {e}")
-            
-    if source == "animes_digital" or not source:
-         try:
-            results.extend(await animes_digital.search(q))
-         except Exception as e:
-            print(f"Error searching AnimesDigital: {e}")
 
-    if source == "animes_online_cc" or not source:
-         try:
-            results.extend(await animes_online_cc.search(q))
-         except Exception as e:
-            print(f"Error searching AnimesOnlineCC: {e}")
-
-    return results
 
 @router.get("/anime/details", response_model=Anime)
 async def get_anime_details(url: str, source: str):

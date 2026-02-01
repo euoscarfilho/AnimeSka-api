@@ -44,6 +44,8 @@ class DiscoveryService:
         # If query becomes empty (e.g. user searched just "Dublado"), fallback to original
         if not clean_query:
             clean_query = query
+        
+        print(f"Enriching search results for query: '{clean_query}'")
             
         anilist_data = await anilist_service.search_anime(clean_query)
         
