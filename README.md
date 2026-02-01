@@ -6,10 +6,11 @@ Construída com **FastAPI** e **Playwright**, esta API é capaz de navegar em si
 
 ## 🚀 Funcionalidades
 
-*   **Busca Unificada:** Pesquise animes em múltiplas fontes simultaneamente.
+*   **Busca Unificada & Enriquecida:** Pesquise animes em múltiplas fontes simultaneamente, com resultados enriquecidos com metadados do **AniList** (Nota, Status, Descrição).
 *   **Detalhes Completos:** Título, Capa, Sinopse, Gêneros, Ano, Status, Temporada e lista de Episódios.
 *   **Links de Vídeo Diretos:**
     *   Extração inteligente de links de vídeo (`.mp4`, `.m3u8`).
+    *   **Playback Inteligente:** Descoberta automática da melhor fonte para assistir (priorizando `AnimesDigital`).
     *   Suporte a interceptação de requisições de rede para players ofuscados.
     *   Navegação automática em iframes de players (ex: Blogger, MP4Upload).
 *   **Stealth Mode:** Utiliza técnicas para evitar detecção por anti-bots.
@@ -112,18 +113,23 @@ A API está rodando em produção no Render:
 *   `source`: (Opcional) Filtrar por fonte. Valores: `animes_hd`, `animes_digital`, `animes_online_cc`.
 
 ```bash
-curl "https://animeska-api.onrender.com/api/v1/search?q=Naruto&source=animes_hd"
+```bash
+curl "https://animeska-api.onrender.com/api/v1/search?q=Jujutsu&source=animes_digital"
 ```
 
 **Exemplo de Resposta:**
 ```json
 [
   {
-    "slug": "naruto-shippuden-dublado",
-    "title": "Naruto Shippuden",
-    "url": "https://animeshd.to/animes/naruto-shippuden-dublado/",
-    "cover_image": "https://img.png",
-    "source": "AnimesHD"
+    "slug": "jujutsu-kaisen-2-dublado",
+    "title": "Jujutsu Kaisen 2 Dublado",
+    "url": "https://animesdigital.org/...",
+    "cover_image": "https://...",
+    "source": "AnimesDigital",
+    "description": "A boy fights... for 'the right death'...",
+    "score": 84,
+    "status": "FINISHED",
+    "genres": ["Action", "Fantasy"]
   }
 ]
 ```
@@ -167,16 +173,17 @@ curl "https://animeska-api.onrender.com/api/v1/episode/link?source=AnimesHD&url=
 ### 4. Play Rápido (Simplificado) ✅
 **GET** `/api/v1/anime/play`
 
-Este endpoint combina a busca de detalhes e extração do link em uma única chamada. Ideal para quando você já tem o `slug` do anime.
+Este endpoint tenta encontrar e extrair o link do vídeo automaticamente. Se o `source` não for informado, a API escolhe a melhor fonte automaticamente (priorizando `AnimesDigital`).
 
 ```bash
-curl "https://animeska-api.onrender.com/api/v1/anime/play?source=AnimesHD&slug=sousou-no-frieren&number=1"
+# Modo "Discovery" (Automático)
+curl "https://animeska-api.onrender.com/api/v1/anime/play?slug=jujutsu-kaisen&number=1"
 ```
 
 **Parâmetros:**
-*   `slug`: O identificador do anime (ex: `sousou-no-frieren`).
-*   `source`: A fonte (ex: `AnimesHD`).
+*   `slug`: O identificador ou título aproximado do anime (ex: `jujutsu-kaisen`).
 *   `number`: O número do episódio (ex: `1`).
+*   `source`: (Opcional) Forçar uma fonte específica (`AnimesDigital`, `AnimesHD`, `AnimesOnlineCC`).
 
 
 ### Render (Recomendado)

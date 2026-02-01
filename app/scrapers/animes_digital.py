@@ -49,17 +49,28 @@ class AnimesDigitalScraper(BaseScraper):
                      ))
                 else:
                     # Check for results list
-                    articles = page.locator('div.result-item, article, .items article') 
+                    # Updated selectors based on debug dump: .itemA
+                    articles = page.locator('div.itemA, div.result-item, article, .items article') 
                     count = await articles.count()
                     
                     print(f"AnimesDigital: Found {count} results for {query}")
     
                     for i in range(count):
                         article = articles.nth(i)
-                        title_el = article.locator('.title a, h3 a, .poster a')
-                        if await title_el.count() > 0:
-                            title = await title_el.first.inner_text()
-                            url = await title_el.first.get_attribute('href')
+                        # Updated title/link selectors
+                        # Structure: .itemA > a (href) ... .title > .title_anime (text)
+                        
+                        # Try finding the anchor tag directly if it wraps the whole item
+                        link_el = article.locator('a').first
+                        if await link_el.count() > 0:
+                            url = await link_el.get_attribute('href')
+                            
+                            # Title: try .title_anime or fallback
+                            title_el = article.locator('.title_anime, .title, h3')
+                            if await title_el.count() > 0:
+                                title = await title_el.first.inner_text()
+                            else:
+                                title = "Unknown"
                             
                             img_el = article.locator('img')
                             cover = await img_el.first.get_attribute('src') if await img_el.count() > 0 else None
@@ -99,20 +110,35 @@ class AnimesDigitalScraper(BaseScraper):
 
                 episodes = []
                 # Episodes list
-                # Often in a list or grid
-                ep_links = page.locator('.episodios li a, .episodes-list a, .list-episodes a')
-                count = await ep_links.count()
+                # Wait for episodes to load (dynamic)
+                try:
+                    await page.wait_for_selector('.item_ep', timeout=5000)
+                except:
+                    print(f"Timeout waiting for episodes on {anime_url}")
+
+                ep_elements = page.locator('.lista_episodes .item_ep')
+                count = await ep_elements.count()
                 
                 for i in range(count):
-                    link = ep_links.nth(i)
-                    ep_url = await link.get_attribute('href')
-                    # Try to get episode number from text
-                    text = await link.inner_text() 
-                    # Extract number if possible
-                    ep_num = text
-                    match = re.search(r'\d+', text)
+                    el = ep_elements.nth(i)
+                    link_el = el.locator('a').first
+                    ep_url = await link_el.get_attribute('href')
+                    
+                    # Extract number from title_anime div
+                    title_el = el.locator('.title_anime')
+                    if await title_el.count() > 0:
+                        text = await title_el.inner_text()
+                    else:
+                        text = await link_el.inner_text() # Fallback
+
+                    # "Jujutsu Kaisen 2 Episódio 23" -> 23
+                    ep_num = "1"
+                    match = re.search(r'Episódio\s+(\d+)', text, re.IGNORECASE)
+                    if not match:
+                         match = re.search(r'\d+', text)
+                    
                     if match:
-                        ep_num = match.group(0)
+                        ep_num = match.group(1) if len(match.groups()) > 0 else match.group(0)
 
                     if ep_url:
                         episodes.append(Episode(

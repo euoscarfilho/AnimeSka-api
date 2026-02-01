@@ -27,3 +27,9 @@ class SearchResult(BaseModel):
     cover_image: Optional[str] = None
     source: str
     year: Optional[str] = None
+    # Enrichment fields
+    description: Optional[str] = None
+    score: Optional[int] = None
+    genres: List[str] = []
+    status: Optional[str] = None
+    anilist_id: Optional[int] = None

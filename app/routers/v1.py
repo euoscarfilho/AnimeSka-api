@@ -46,6 +46,34 @@ async def get_anime_details(url: str, source: str):
     else:
         raise HTTPException(status_code=400, detail="Invalid source")
 
+from app.services.discovery import discovery_service
+
+@router.get("/search", response_model=List[SearchResult])
+async def search_anime(q: str, source: Optional[str] = Query(None, description="Source to search from (animes_hd, animes_digital, animes_online_cc)")):
+    if source:
+        # Specific source search
+        # Map query param to scraper name if needed, or rely on service map
+        # For backwards compatibility with "animes_hd" etc
+        normalized_source = source
+        if source == "animes_hd": normalized_source = "AnimesHD"
+        if source == "animes_digital": normalized_source = "AnimesDigital"
+        if source == "animes_online_cc": normalized_source = "AnimesOnlineCC"
+        
+        scraper = discovery_service.scrapers.get(normalized_source)
+        if scraper:
+            try:
+                return await scraper.search(q)
+            except Exception as e:
+                print(f"Error searching {source}: {e}")
+                return []
+        else:
+             # If passed lowercase/snake_case check manually
+             pass
+
+    # Unified search
+    return await discovery_service.search_all(q)
+
+
 @router.get("/episode/link", response_model=str)
 async def get_episode_link(url: str, source: str):
     if source == "AnimesHD":
@@ -57,39 +85,14 @@ async def get_episode_link(url: str, source: str):
     else:
         raise HTTPException(status_code=400, detail="Invalid source")
 @router.get("/anime/play", response_model=Optional[str])
-async def quick_play(slug: str, source: str, number: str):
+async def quick_play(slug: str, number: str, source: Optional[str] = None):
     """
-    Simplified endpoint: Directly get video link from slug, source and episode number.
-    Bypasses the need for client-side multi-step logic.
+    Simplified endpoint: Get video link from slug and episode number.
+    Source is optional. If omitted, tries to find the anime across all sources.
     """
-    scraper = None
-    if source == "AnimesHD":
-        scraper = animes_hd
-    elif source == "AnimesDigital":
-        scraper = animes_digital
-    elif source == "AnimesOnlineCC":
-        scraper = animes_online_cc
+    video_link = await discovery_service.get_episode_link_smart(slug, number, source)
     
-    if not scraper:
-        raise HTTPException(status_code=400, detail="Invalid source")
-
-    # 1. Reconstruct anime URL
-    anime_url = scraper.get_anime_url(slug)
-    
-    # 2. Get details to find the episode URL for the given number
-    anime_details = await scraper.get_details(anime_url)
-    if not anime_details or not anime_details.episodes:
-        raise HTTPException(status_code=404, detail="Anime or episodes not found")
-    
-    # 3. Find specific episode
-    episode = next((ep for ep in anime_details.episodes if ep.number == number), None)
-    if not episode:
-        # Try fuzzy match if exact fails (e.g. "01" vs "1")
-        episode = next((ep for ep in anime_details.episodes if ep.number.lstrip('0') == number.lstrip('0')), None)
-    
-    if not episode:
-        raise HTTPException(status_code=404, detail=f"Episode {number} not found")
-    
-    # 4. Get video link
-    video_link = await scraper.get_episode_link(episode.url)
+    if not video_link:
+        raise HTTPException(status_code=404, detail="Episode or video not found")
+        
     return video_link
