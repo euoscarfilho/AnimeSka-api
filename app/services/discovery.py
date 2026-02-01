@@ -36,7 +36,16 @@ class DiscoveryService:
                 print(f"Error searching {name}: {res_or_exc}")
 
         # Fetch AniList metadata
-        anilist_data = await anilist_service.search_anime(query)
+        # Clean query for better AniList matching (remove "Dublado", "Legendado", etc.)
+        import re
+        clean_query = re.sub(r'\b(dublado|legendado|filme|movie|tv|season|ova|special|especial)\b', '', query, flags=re.IGNORECASE).strip()
+        # Also remove typical scraper prefixes/suffixes if present (though query usually comes from user)
+        
+        # If query becomes empty (e.g. user searched just "Dublado"), fallback to original
+        if not clean_query:
+            clean_query = query
+            
+        anilist_data = await anilist_service.search_anime(clean_query)
         
         # Enrich results if metadata found
         if anilist_data:
