@@ -144,6 +144,9 @@ class AnimesDigitalScraper(BaseScraper):
                         ep_num = match.group(1) if len(match.groups()) > 0 else match.group(0)
 
                     if ep_url:
+                        if not ep_url.startswith("http"):
+                             ep_url = f"{self.base_url}/{ep_url.lstrip('/')}"
+                        
                         episodes.append(Episode(
                             number=ep_num.strip(), 
                             url=ep_url, 
