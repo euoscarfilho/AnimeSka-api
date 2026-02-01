@@ -6,7 +6,7 @@ Construída com **FastAPI** e **Playwright**, esta API é capaz de navegar em si
 
 ## 🚀 Funcionalidades
 
-*   **Busca Unificada & Enriquecida:** Pesquise animes em múltiplas fontes simultaneamente, com resultados enriquecidos com metadados do **AniList** (Nota, Status, Descrição).
+*   **Busca Unificada & Enriquecida:** Pesquise animes em múltiplas fontes simultaneamente, com resultados enriquecidos com metadados do **AniList** (Nota, Status, Descrição). O sistema limpa automaticamente termos como "Dublado" ou "2ª Temporada" da busca para garantir que o AniList encontre os dados corretos.
 *   **Detalhes Completos:** Título, Capa, Sinopse, Gêneros, Ano, Status, Temporada e lista de Episódios.
 *   **Links de Vídeo Diretos:**
     *   Extração inteligente de links de vídeo (`.mp4`, `.m3u8`).
