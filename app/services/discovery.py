@@ -172,6 +172,8 @@ class DiscoveryService:
         clean_query = re.sub(r'\b(dublado|legendado|filme|movie|tv|season|ova|special|especial)\b', '', query, flags=re.IGNORECASE).strip()
         if not clean_query:
             clean_query = query
+        
+        print(f"Enriching anime: '{anime.title}' using query: '{clean_query}'")
             
         anilist_data = await anilist_service.search_anime(clean_query)
         
