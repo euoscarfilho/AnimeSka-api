@@ -137,6 +137,8 @@ curl "https://animeska-api.onrender.com/api/v1/search?q=Jujutsu&source=animes_di
 ### 2. Detalhes do Anime
 **GET** `/api/v1/anime/details`
 
+A API sincroniza automaticamente com o **AniList** para retornar metadados oficiais (ID, Capa em alta qualidade, etc).
+
 ```bash
 # Exemplo com URL codificada (recomendado)
 curl "https://animeska-api.onrender.com/api/v1/anime/details?source=AnimesHD&url=https%3A%2F%2Fanimeshd.to%2Fanimes%2Fnaruto-shippuden-dublado%2F"
@@ -153,6 +155,7 @@ curl "https://animeska-api.onrender.com/api/v1/anime/details?source=AnimesHD&url
   "status": "Completo",
   "season": "1",
   "source": "AnimesHD",
+  "anilist_id": 12345,
   "episodes": [
     {
       "number": "1",
@@ -165,6 +168,9 @@ curl "https://animeska-api.onrender.com/api/v1/anime/details?source=AnimesHD&url
 
 ### 3. Link do Episódio
 **GET** `/api/v1/episode/link`
+
+Retorna o link direto do vídeo (`.mp4`, `.m3u8`).
+- Retorna **404 Not Found** se o vídeo não for encontrado ou se houver erro na extração.
 
 ```bash
 curl "https://animeska-api.onrender.com/api/v1/episode/link?source=AnimesHD&url=https%3A%2F%2Fanimeshd.to%2Fepisodio%2F..."
@@ -186,19 +192,27 @@ curl "https://animeska-api.onrender.com/api/v1/anime/play?slug=jujutsu-kaisen&nu
 *   `source`: (Opcional) Forçar uma fonte específica (`AnimesDigital`, `AnimesHD`, `AnimesOnlineCC`).
 
 
-### Render (Recomendado)
+### Railway (Deployment Recomendado)
+
+O projeto está configurado para deploy via Docker, o que garante a instalação correta do Playwright e suas dependências.
+
+1.  Crie um novo projeto no Railway.
+2.  Conecte seu repositório.
+3.  O Railway detectará o `Dockerfile` automaticamente.
+4.  Certifique-se de que a variável `PORT` está sendo respeitada (o Dockerfile já usa `$PORT` ou `8000`).
+
+### Render
 
 1.  Crie um novo **Web Service** no Render.
 2.  Conecte seu repositório GitHub/GitLab.
-3.  **Runtime:** Python 3.
-4.  **Build Command:** `pip install -r requirements.txt && playwright install chromium`
-5.  **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+3.  Selecione **Docker** como ambiente (ao invés de Python nativo).
+4.  O Render construirá a imagem e fará o deploy.
 
 ### Vercel (Experimental)
 
 Arquivos de configuração para Vercel estão disponíveis em `deploy/vercel`.
 
-> **Nota:** Deploy em Serverless (como Vercel) pode encontrar limitações devido ao tamanho dos binários do navegador Playwright. Recomendamos o uso de containers (Docker/Render/Railway) para maior estabilidade, mas oferecemos suporte experimental para Vercel via `@vercel/python`.
+> **Nota:** Deploy em Serverless (como Vercel) pode encontrar limitações devido ao tamanho dos binários do navegador Playwright. Recomendamos o uso de containers (Docker/Render/Railway) para maior estabilidade.
 
 ## 📝 Fontes Suportadas
 
