@@ -19,6 +19,7 @@ class Anime(BaseModel):
     season: Optional[str] = None
     source: Optional[str] = None
     episodes: List[Episode] = []
+    anilist_id: Optional[int] = None
 
 class SearchResult(BaseModel):
     slug: Optional[str] = None

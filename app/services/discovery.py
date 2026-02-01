@@ -160,4 +160,40 @@ class DiscoveryService:
             print(f"Error in smart link retrieval: {e}")
             return None
 
+    async def enrich_anime(self, anime: Anime) -> Anime:
+        """
+        Enrich a single Anime object with AniList metadata.
+        """
+        if not anime:
+            return anime
+            
+        import re
+        query = anime.title
+        clean_query = re.sub(r'\b(dublado|legendado|filme|movie|tv|season|ova|special|especial)\b', '', query, flags=re.IGNORECASE).strip()
+        if not clean_query:
+            clean_query = query
+            
+        anilist_data = await anilist_service.search_anime(clean_query)
+        
+        if anilist_data:
+             anime.anilist_id = anilist_data.get('id')
+             
+             # Fill missing fields
+             if not anime.description and anilist_data.get('description'):
+                 anime.description = anilist_data.get('description').replace('<br>', '\n')
+                 
+             if not anime.cover_image and anilist_data.get('coverImage', {}).get('large'):
+                  anime.cover_image = anilist_data.get('coverImage', {}).get('large')
+                  
+             if not anime.year and anilist_data.get('seasonYear'):
+                 anime.year = str(anilist_data.get('seasonYear'))
+                 
+             if not anime.status and anilist_data.get('status'):
+                 anime.status = anilist_data.get('status')
+                 
+             if not anime.genres and anilist_data.get('genres'):
+                 anime.genres = anilist_data.get('genres')
+
+        return anime
+
 discovery_service = DiscoveryService()

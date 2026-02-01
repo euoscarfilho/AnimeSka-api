@@ -4,6 +4,7 @@ from app.models import SearchResult, Anime, Episode
 from app.scrapers.animes_hd import AnimesHDScraper
 from app.scrapers.animes_digital import AnimesDigitalScraper
 from app.scrapers.animes_online_cc import AnimesOnlineCCScraper
+from app.services.discovery import discovery_service
 
 router = APIRouter()
 
@@ -50,9 +51,12 @@ async def get_anime_details(url: str, source: str):
     if not result:
         raise HTTPException(status_code=404, detail="Anime details not found or scraping failed")
     
+    # Synchronize with AniList
+    result = await discovery_service.enrich_anime(result)
+
     return result
 
-from app.services.discovery import discovery_service
+
 
 @router.get("/search", response_model=List[SearchResult])
 async def search_anime(q: str, source: Optional[str] = Query(None, description="Source to search from (animes_hd, animes_digital, animes_online_cc)")):
