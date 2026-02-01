@@ -37,14 +37,20 @@ async def search_anime(q: str, source: Optional[str] = Query(None, description="
 
 @router.get("/anime/details", response_model=Anime)
 async def get_anime_details(url: str, source: str):
+    result = None
     if source == "AnimesHD":
-        return await animes_hd.get_details(url)
+        result = await animes_hd.get_details(url)
     elif source == "AnimesDigital":
-        return await animes_digital.get_details(url)
+        result = await animes_digital.get_details(url)
     elif source == "AnimesOnlineCC":
-        return await animes_online_cc.get_details(url)
+        result = await animes_online_cc.get_details(url)
     else:
         raise HTTPException(status_code=400, detail="Invalid source")
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Anime details not found or scraping failed")
+    
+    return result
 
 from app.services.discovery import discovery_service
 
